@@ -4,6 +4,8 @@ import java.awt.event.*;
 import java.io.File;
 import javax.swing.table.*;
 import javax.swing.event.*;
+import java.util.ArrayList;
+import java.awt.datatransfer.*;
 
 class Main {
     private static File file = new File("Built In");
@@ -22,7 +24,7 @@ class Main {
         }
         
         JFrame f = new JFrame("UniJ");
-        f.setSize(600, 500);
+        f.setSize(700, 500);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try {
             f.setIconImage(new ImageIcon(Main.class.getResource("icon64.png").toURI().toURL()).getImage());
@@ -40,11 +42,11 @@ class Main {
         JButton searchGo = new JButton("Search");
         searchPanel.add(searchGo);
         
-        JComboBox searchMethod = new JComboBox(new String[] {"By Contains", "By Contains Case Sensitive", "By Regex"});
+        JComboBox searchMethod = new JComboBox(new String[] {"By Contains", "By Contains Case Sensitive", "By Regex", "By Character"});
         searchPanel.add(searchMethod);
         
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        split.setDividerLocation(400);
+        split.setDividerLocation(500);
         f.add(split, BorderLayout.CENTER);
         
         JTabbedPane tabbed = new JTabbedPane();
@@ -57,7 +59,7 @@ class Main {
         tabbed.addTab("Chars", charScroll);
         
         JSplitPane preview = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true);
-        preview.setDividerLocation(100);
+        preview.setDividerLocation(200);
         split.setRightComponent(preview);
         
         JPanel bigletterpanel = new JPanel();
@@ -71,13 +73,23 @@ class Main {
         bigletter.setMinimumSize(new Dimension(50, 50));
         bigletterpanel.add(bigletter);
         
-        JLabel biglettersizeLabel = new JLabel("100");
+        JLabel biglettersizeLabel = new JLabel("100pt");
+        biglettersizeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         bigletterpanel.add(biglettersizeLabel);
+        
+        JButton copy = new JButton("Copy");
+        copy.setAlignmentX(Component.CENTER_ALIGNMENT);
+        copy.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(bigletter.getText()), null);
+            }
+        });
+        bigletterpanel.add(copy);
         
         // Big letter size listener
         bigletter.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                bigletter.setFont(new Font(font.getName(), font.getStyle(), bigletterpanel.getHeight()));
+                bigletter.setFont(new Font(font.getName(), font.getStyle(), bigletter.getHeight()));
                 biglettersizeLabel.setText(bigletter.getFont().getSize() + "pt");
             }
         });
@@ -89,24 +101,35 @@ class Main {
         letterlabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         preview.setBottomComponent(letterlabel);
         
+        ArrayList<ArrayList<String>> charData = new ArrayList<ArrayList<String>>();
+        
         // Add listener to charTable
         ListSelectionListener ls = new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 int row = charTable.getSelectedRow();
                 int col = charTable.getSelectedColumn();
-                int chIndex = (row * 10) + col;
-                if (row != -1 && col != -1 && chIndex < ldata.length) {
+                if (row != -1 && col != -1) {
                     String ln = null;
+                    String c = null;
                     for (String l : ldata) {
-                        String c = new String(new char[] {(char) ((int) Integer.decode("0x" + l.split(";")[0]))});
-                        if (c.equals(charTable.getModel().getValueAt(row, col))) {
-                            ln = l;
+                        String ch = l.split(";")[0];
+                        try {
+                            if (ch.equals(charData.get(row).get(col))) {
+                                ln = l;
+                                //c = new String(new char[] {(char) ((int) Integer.decode("0x" + ln.split(";")[0]))});
+                                c = new String(Character.toChars((int) Integer.decode("0x" + ln.split(";")[0])));
+                                break;
+                            }
+                        } catch (Exception ex) {
                             break;
                         }
                     }
-                    if (ln != null) {
-                        bigletter.setText((String) charTable.getModel().getValueAt(row, col));
+                    if (ln != null && c != null) {
+                        bigletter.setText(c);
                         letterlabel.setText(ln);
+                    } else {
+                        bigletter.setText("");
+                        letterlabel.setText("");
                     }
                 }
             }
@@ -125,10 +148,13 @@ class Main {
                 model.setColumnCount(charsPerRow);
                 charTable.setModel(model);
                 
+                charData.clear();
+                
                 for (int i = 0; i < charsPerRow; i++) {
                     charTable.getColumnModel().getColumn(i).setHeaderValue(String.format("%02X", i));
                 }
                 charTable.setFont(font);
+                search.setFont(font);
                 
                 bigletter.setText("");
                 bigletter.setFont(new Font(font.getName(), font.getStyle(), 100));
@@ -146,15 +172,20 @@ class Main {
                                 searchPassed = ldata[i].contains(searchString);
                             } else if (searchMeth.equals("By Regex")) {
                                 searchPassed = ldata[i].matches(searchString);
+                            } else if (searchMeth.equals("By Character")) {
+                                searchPassed = searchString.contains(new String(Character.toChars((int) Integer.decode("0x" + ldata[i].split(";")[0]))));/*new String(new char[] {(char) ((int) Integer.decode("0x" + ldata[i].split(";")[0]))}));*/
                             }
                         }
                         if (searchPassed) {
-                            String c = new String(new char[] {(char) ((int) Integer.decode("0x" + ldata[i].split(";")[0]))});
+                            //String c = new String(new char[] {(char) ((int) Integer.decode("0x" + ldata[i].split(";")[0]))});
+                            String c = new String(Character.toChars((int) Integer.decode("0x" + ldata[i].split(";")[0])));
                             
                             if (n % charsPerRow == 0) {
                                 model.setRowCount(model.getRowCount() + 1);
+                                charData.add(new ArrayList<String>());
                             }
                             model.setValueAt(c, model.getRowCount() - 1, n % charsPerRow);
+                            charData.get(model.getRowCount() - 1).add(n % charsPerRow, ldata[i].split(";")[0]);
                             n++;
                         }
                     } catch (Exception e) {
@@ -162,6 +193,8 @@ class Main {
                     }
                 }
                 tabbed.setTitleAt(0, "Chars (" + n + ")");
+                charTable.revalidate();
+                charTable.repaint();
             }
         };
         
