@@ -87,9 +87,9 @@ class Main {
         bigletterpanel.add(copy);
         
         // Big letter size listener
-        bigletter.addComponentListener(new ComponentAdapter() {
+        bigletterpanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                bigletter.setFont(new Font(font.getName(), font.getStyle(), bigletter.getHeight()));
+                bigletter.setFont(new Font(font.getName(), font.getStyle(), (int) (bigletterpanel.getHeight() / 2)));
                 biglettersizeLabel.setText(bigletter.getFont().getSize() + "pt");
             }
         });
@@ -141,7 +141,21 @@ class Main {
         f.add(tb, BorderLayout.PAGE_END);
         
         JComponent func = new JComponent() {
-            public void paint(Graphics g) {
+            public String toChar(int n) {
+                return new String(Character.toChars(n));
+            }
+            public String toCharHex(String nhex) {
+                return toChar((int) Integer.decode("0x" + nhex));
+            }
+            public String getInldata(int n) {
+                for (String l : ldata) {
+                    if (toChar(n) == toCharHex(l.split(";")[0])) {
+                        return l;
+                    }
+                }
+                return null;
+            }
+            public void repaint() {
                 DefaultTableModel model = new DefaultTableModel() {
                     public boolean isCellEditable(int row, int column) {return false;}
                 };
@@ -161,31 +175,39 @@ class Main {
                 letterlabel.setText("");
                 
                 int n = 0;
-                for (int i = 0; i < ldata.length; i++) {
+                Exception regexError = null;
+                
+                int last = (int) Integer.decode("0x" + ldata[ldata.length - 1].split(";")[0]);
+                for (int i = 0; i < 100; i++) {
                     try {
+                        String gotInldata = getInldata(i);
                         boolean searchPassed = true;
-                        if (!searchString.equals("")) {
+                        if (!searchString.equals("") && gotInldata != null) {
                             searchPassed = false;
                             if (searchMeth.equals("By Contains")) {
-                                searchPassed = ldata[i].toUpperCase().contains(searchString.toUpperCase());
+                                searchPassed = gotInldata.toUpperCase().contains(searchString.toUpperCase());
                             } else if (searchMeth.equals("By Contains Case Sensitive")) {
-                                searchPassed = ldata[i].contains(searchString);
+                                searchPassed = gotInldata.contains(searchString);
                             } else if (searchMeth.equals("By Regex")) {
-                                searchPassed = ldata[i].matches(searchString);
+                                try {
+                                    searchPassed = gotInldata.matches(searchString);
+                                } catch (Exception e) {
+                                    regexError = e;
+                                    break;
+                                }
                             } else if (searchMeth.equals("By Character")) {
-                                searchPassed = searchString.contains(new String(Character.toChars((int) Integer.decode("0x" + ldata[i].split(";")[0]))));/*new String(new char[] {(char) ((int) Integer.decode("0x" + ldata[i].split(";")[0]))}));*/
+                                searchPassed = searchString.contains(toChar(i));
                             }
                         }
-                        if (searchPassed) {
-                            //String c = new String(new char[] {(char) ((int) Integer.decode("0x" + ldata[i].split(";")[0]))});
-                            String c = new String(Character.toChars((int) Integer.decode("0x" + ldata[i].split(";")[0])));
+                        if (searchPassed && gotInldata != null) {
+                            String c = toCharHex(gotInldata.split(";")[0]);
                             
                             if (n % charsPerRow == 0) {
                                 model.setRowCount(model.getRowCount() + 1);
                                 charData.add(new ArrayList<String>());
                             }
                             model.setValueAt(c, model.getRowCount() - 1, n % charsPerRow);
-                            charData.get(model.getRowCount() - 1).add(n % charsPerRow, ldata[i].split(";")[0]);
+                            charData.get(model.getRowCount() - 1).add(n % charsPerRow, gotInldata);
                             n++;
                         }
                     } catch (Exception e) {
@@ -195,6 +217,10 @@ class Main {
                 tabbed.setTitleAt(0, "Chars (" + n + ")");
                 charTable.revalidate();
                 charTable.repaint();
+                
+                if (regexError != null) {
+                    JOptionPane.showMessageDialog(f, regexError.toString(), "Regex Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         };
         
@@ -203,7 +229,7 @@ class Main {
             public void actionPerformed(ActionEvent e) {
                 searchString = search.getText();
                 searchMeth = (String) searchMethod.getSelectedItem();
-                func.paint(null);
+                func.repaint();
             }
         });
         
@@ -221,7 +247,7 @@ class Main {
                     loaded.setText("Unicode " + file.getName());
                     ldata = Loader.getData(file).split("\n");
                     search.setText("");
-                    func.paint(null);
+                    func.repaint();
                 }
             }
         });
@@ -234,7 +260,7 @@ class Main {
                 if (c.showDialog(f) == JFontChooser.OK_OPTION) {
                     font = c.getSelectedFont();
                     fontbutton.setText("Font " + font.getName());
-                    func.paint(null);
+                    func.repaint();
                 }
             }
         });
@@ -244,12 +270,12 @@ class Main {
         JButton help = new JButton("?");
         help.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(f, "UniJ, the free cross-platform Unicode font inspector.\n\nVersion 1.0\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") + "\n\nhttps://github.com/mochawoof/unij", "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
+                JOptionPane.showMessageDialog(f, "UniJ, the free cross-platform Unicode font inspector.\n\nVersion 1.0.1\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") + "\n\nhttps://github.com/mochawoof/unij", "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
             }
         });
         tb.add(help);
         
-        func.paint(null);
+        func.repaint();
         f.setVisible(true);
     }
 }
