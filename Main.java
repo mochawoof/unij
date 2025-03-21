@@ -4,16 +4,15 @@ import java.awt.event.*;
 import java.io.File;
 import javax.swing.table.*;
 import javax.swing.event.*;
-import java.util.ArrayList;
 import java.awt.datatransfer.*;
+import java.util.*;
 
 class Main {
-    private static File file = new File("Built In");
-    private static String[] ldata = Loader.getData(file).split("\n");
-    private static Font font = new Font("SansSerif", Font.PLAIN, 14);
+    private static Font font = new Font("Dialog", Font.PLAIN, 14);
     private static int charsPerRow = 16;
     private static String searchString = "";
     private static String searchMeth = "By Contains";
+    private static ArrayList<Integer> displayedChars = new ArrayList<Integer>();
     
     public static void main(String[] args) {
         
@@ -62,46 +61,43 @@ class Main {
         preview.setDividerLocation(200);
         split.setRightComponent(preview);
         
-        JPanel bigletterpanel = new JPanel();
-        bigletterpanel.setLayout(new BoxLayout(bigletterpanel, BoxLayout.Y_AXIS));
-        preview.setTopComponent(bigletterpanel);
+        JPanel bigLetterPanel = new JPanel();
+        bigLetterPanel.setLayout(new BoxLayout(bigLetterPanel, BoxLayout.Y_AXIS));
+        preview.setTopComponent(bigLetterPanel);
         
-        JLabel bigletter = new JLabel("");
-        bigletter.setFont(new Font(font.getName(), font.getStyle(), 100));
-        bigletter.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        bigletter.setAlignmentX(Component.CENTER_ALIGNMENT);
-        bigletter.setMinimumSize(new Dimension(50, 50));
-        bigletterpanel.add(bigletter);
+        JLabel bigLetter = new JLabel("");
+        bigLetter.setFont(new Font(font.getName(), font.getStyle(), 100));
+        bigLetter.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        bigLetter.setAlignmentX(Component.CENTER_ALIGNMENT);
+        bigLetter.setMinimumSize(new Dimension(50, 50));
+        bigLetterPanel.add(bigLetter);
         
-        JLabel biglettersizeLabel = new JLabel("100pt");
-        biglettersizeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        bigletterpanel.add(biglettersizeLabel);
+        JLabel bigLetterSizeLabel = new JLabel("100pt");
+        bigLetterSizeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        bigLetterPanel.add(bigLetterSizeLabel);
         
         JButton copy = new JButton("Copy");
         copy.setAlignmentX(Component.CENTER_ALIGNMENT);
         copy.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(bigletter.getText()), null);
+                //Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(bigletter.getText()), null);
             }
         });
-        bigletterpanel.add(copy);
+        bigLetterPanel.add(copy);
         
         // Big letter size listener
-        bigletterpanel.addComponentListener(new ComponentAdapter() {
+        bigLetterPanel.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                bigletter.setFont(new Font(font.getName(), font.getStyle(), (int) (bigletterpanel.getHeight() / 2)));
-                biglettersizeLabel.setText(bigletter.getFont().getSize() + "pt");
+                
             }
         });
         
-        JTextArea letterlabel = new JTextArea("");
-        letterlabel.setLineWrap(true);
-        letterlabel.setEditable(false);
-        letterlabel.setMinimumSize(new Dimension(0, 0));
-        letterlabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        preview.setBottomComponent(letterlabel);
-        
-        ArrayList<ArrayList<String>> charData = new ArrayList<ArrayList<String>>();
+        JTextArea letterLabel = new JTextArea("");
+        letterLabel.setLineWrap(true);
+        letterLabel.setEditable(false);
+        letterLabel.setMinimumSize(new Dimension(0, 0));
+        letterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        preview.setBottomComponent(letterLabel);
         
         // Add listener to charTable
         ListSelectionListener ls = new ListSelectionListener() {
@@ -109,27 +105,13 @@ class Main {
                 int row = charTable.getSelectedRow();
                 int col = charTable.getSelectedColumn();
                 if (row != -1 && col != -1) {
-                    String ln = null;
-                    String c = null;
-                    for (String l : ldata) {
-                        String ch = l.split(";")[0];
-                        try {
-                            if (ch.equals(charData.get(row).get(col))) {
-                                ln = l;
-                                //c = new String(new char[] {(char) ((int) Integer.decode("0x" + ln.split(";")[0]))});
-                                c = new String(Character.toChars((int) Integer.decode("0x" + ln.split(";")[0])));
-                                break;
-                            }
-                        } catch (Exception ex) {
-                            break;
-                        }
-                    }
-                    if (ln != null && c != null) {
-                        bigletter.setText(c);
-                        letterlabel.setText(ln);
+                    CharCell value = (CharCell) charTable.getModel().getValueAt(row, col);
+                    if (value != null) {
+                        bigLetter.setText(value.display);
+                        letterLabel.setText(value.line);
                     } else {
-                        bigletter.setText("");
-                        letterlabel.setText("");
+                        bigLetter.setText("");
+                        letterLabel.setText("");
                     }
                 }
             }
@@ -140,142 +122,107 @@ class Main {
         JToolBar tb = new JToolBar();
         f.add(tb, BorderLayout.PAGE_END);
         
+        JButton loaded = new JButton("Unicode ");
+        tb.add(loaded);
+        
+        JButton fontbutton = new JButton("Font " + font.getName());
+        tb.add(fontbutton);
+        
+        tb.add(Box.createGlue());
+        JButton help = new JButton("?");
+        tb.add(help);
+        
         JComponent func = new JComponent() {
-            public String toChar(int n) {
-                return new String(Character.toChars(n));
-            }
-            public String toCharHex(String nhex) {
-                return toChar((int) Integer.decode("0x" + nhex));
-            }
-            public String getInldata(int n) {
-                for (String l : ldata) {
-                    if (toChar(n) == toCharHex(l.split(";")[0])) {
-                        return l;
+            public void revalidate() {
+                Loader.loadData(Loader.file, new Runnable() {
+                    public void run() {
+                        repaint();
                     }
-                }
-                return null;
+                });
             }
             public void repaint() {
+                bigLetter.setText("");
+                letterLabel.setText("");
+                loaded.setText("Unicode " + Loader.file.getName());
+                displayedChars.clear();
+                
                 DefaultTableModel model = new DefaultTableModel() {
-                    public boolean isCellEditable(int row, int column) {return false;}
+                    public boolean isCellEditable(int row, int col) {return false;}
                 };
                 model.setColumnCount(charsPerRow);
+                model.setRowCount((int) Math.ceil((double) Loader.lastCode / charsPerRow));
+                
+                String[] columnIdentifiers = new String[charsPerRow];
+                for (int i = 0; i < charsPerRow; i++) {
+                    columnIdentifiers[i] = String.format("%02X", i);
+                }
+                model.setColumnIdentifiers(columnIdentifiers);
+                
                 charTable.setModel(model);
                 
-                charData.clear();
-                
-                for (int i = 0; i < charsPerRow; i++) {
-                    charTable.getColumnModel().getColumn(i).setHeaderValue(String.format("%02X", i));
-                }
-                charTable.setFont(font);
-                search.setFont(font);
-                
-                bigletter.setText("");
-                bigletter.setFont(new Font(font.getName(), font.getStyle(), 100));
-                letterlabel.setText("");
-                
                 int n = 0;
-                Exception regexError = null;
-                
-                int last = (int) Integer.decode("0x" + ldata[ldata.length - 1].split(";")[0]);
-                for (int i = 0; i < 100; i++) {
+                System.out.println("Displaying data with range " + Loader.lastCode + " real size " + Loader.data.size());
+                for (int i = 0; i < Loader.lastCode; i++) {
                     try {
-                        String gotInldata = getInldata(i);
-                        boolean searchPassed = true;
-                        if (!searchString.equals("") && gotInldata != null) {
-                            searchPassed = false;
-                            if (searchMeth.equals("By Contains")) {
-                                searchPassed = gotInldata.toUpperCase().contains(searchString.toUpperCase());
-                            } else if (searchMeth.equals("By Contains Case Sensitive")) {
-                                searchPassed = gotInldata.contains(searchString);
-                            } else if (searchMeth.equals("By Regex")) {
-                                try {
-                                    searchPassed = gotInldata.matches(searchString);
-                                } catch (Exception e) {
-                                    regexError = e;
-                                    break;
+                        String line = Loader.data.get(i);
+                        
+                        // Make sure char exists
+                        if (line == null) {
+                            continue;
+                        }
+                        
+                        int code = (int) Integer.decode("0x" + line.split(";")[0]);
+                        
+                        // Search pass
+                        if (searchString.equals("")) {
+                            if (searchMeth.equals("Contains")) {
+                                if (!line.contains(searchString)) {
+                                    continue;
                                 }
-                            } else if (searchMeth.equals("By Character")) {
-                                searchPassed = searchString.contains(toChar(i));
                             }
                         }
-                        if (searchPassed && gotInldata != null) {
-                            String c = toCharHex(gotInldata.split(";")[0]);
-                            
-                            if (n % charsPerRow == 0) {
-                                model.setRowCount(model.getRowCount() + 1);
-                                charData.add(new ArrayList<String>());
-                            }
-                            model.setValueAt(c, model.getRowCount() - 1, n % charsPerRow);
-                            charData.get(model.getRowCount() - 1).add(n % charsPerRow, gotInldata);
-                            n++;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        
+                        model.setValueAt(new CharCell(code, line, new String(Character.toChars(code))), i - (model.getRowCount() * (charsPerRow - 1)), i - (charsPerRow * (model.getRowCount() - 1)));
+                        displayedChars.add(code);
+                        n++;
+                    } catch (Exception ex) {
+                        System.err.println("Table population error at " + i + " n " + n);
+                        System.err.println(ex.toString());
                     }
+                    i++;
                 }
+                System.out.println("Done");
                 tabbed.setTitleAt(0, "Chars (" + n + ")");
-                charTable.revalidate();
-                charTable.repaint();
-                
-                if (regexError != null) {
-                    JOptionPane.showMessageDialog(f, regexError.toString(), "Regex Error", JOptionPane.ERROR_MESSAGE);
-                }
             }
         };
         
         // Search listener add
         searchGo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                searchString = search.getText();
-                searchMeth = (String) searchMethod.getSelectedItem();
-                func.repaint();
+                
             }
         });
         
-        JButton loaded = new JButton("Unicode " + file.getName());
         loaded.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JFileChooser c = new JFileChooser();
                 
-                if (file.getParent() != null) {
-                    c.setCurrentDirectory(new File(file.getParent()));
-                }
-                
-                if (c.showOpenDialog(f) == JFileChooser.APPROVE_OPTION) {
-                    file = c.getSelectedFile();
-                    loaded.setText("Unicode " + file.getName());
-                    ldata = Loader.getData(file).split("\n");
-                    search.setText("");
-                    func.repaint();
-                }
             }
         });
-        tb.add(loaded);
         
-        JButton fontbutton = new JButton("Font " + font.getName());
         fontbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JFontChooser c = new JFontChooser(null, font);
-                if (c.showDialog(f) == JFontChooser.OK_OPTION) {
-                    font = c.getSelectedFont();
-                    fontbutton.setText("Font " + font.getName());
-                    func.repaint();
-                }
+                
             }
         });
-        tb.add(fontbutton);
         
-        tb.add(Box.createGlue());
-        JButton help = new JButton("?");
         help.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(f, "UniJ, the free cross-platform Unicode font inspector.\n\nVersion 1.0.1\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") + "\n\nhttps://github.com/mochawoof/unij", "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
+                JOptionPane.showMessageDialog(f, "UniJ, the free cross-platform Unicode font inspector.\n\nVersion 1.1\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") + "\n\nhttps://github.com/mochawoof/unij", "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
             }
         });
-        tb.add(help);
         
-        func.repaint();
+        Loader.file = new File("Built In");
+        func.revalidate();
         f.setVisible(true);
     }
 }
