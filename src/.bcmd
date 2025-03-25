@@ -1,0 +1,7 @@
+#BCMD Configuration
+#Tue Mar 25 12:03:36 EDT 2025
+main=Main
+include=*.java
+jarinclude=class,jar,png
+cp=lib/*;.
+jdk=C:\\Windows\\Temp\\folder\\bluej\\jdk\\bin
