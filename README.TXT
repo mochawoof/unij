@@ -1,1 +1,0 @@
-UniJ, the free cross-platform Unicode font inspector.
