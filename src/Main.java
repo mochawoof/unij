@@ -11,11 +11,13 @@ import java.util.stream.*;
 import java.awt.datatransfer.StringSelection;
 
 class Main {
+    public static final String VERSION = "2.0";
     public static int charsPerRow = 16;
     public static ArrayList<SingleChar> chars = new ArrayList<SingleChar>();
 
     public static JFrame f;
     public static JSplitPane split;
+    public static JScrollPane tableScrollPane;
     public static JTable table;
     public static DefaultTableModel model;
     public static JPanel topPanel;
@@ -24,6 +26,8 @@ class Main {
     public static JComboBox searchMethod;
     public static JButton fontButton;
     public static JButton dataButton;
+    public static JButton helpButton;
+
     public static JPanel sidePanel;
     public static JLabel bigChar;
     public static JButton copyButton;
@@ -31,7 +35,7 @@ class Main {
 
     public static String search = "";
     public static String searchMeth = "By Contains";
-    public static Font font = new Font("SansSerif", Font.PLAIN, 14);
+    public static Font font = new Font("SansSerif", Font.PLAIN, 12);
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -39,7 +43,7 @@ class Main {
             e.printStackTrace();
         }
 
-        f = new JFrame("UniJ 2.0");
+        f = new JFrame("UniJ " + VERSION);
         f.setSize(800, 600);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
@@ -74,7 +78,7 @@ class Main {
         table.getSelectionModel().addListSelectionListener(tableListener);
         table.getColumnModel().getSelectionModel().addListSelectionListener(tableListener);
 
-        JScrollPane tableScrollPane = new JScrollPane(table);
+        tableScrollPane = new JScrollPane(table);
         tableScrollPane.getVerticalScrollBar().setUnitIncrement(20);
         split.setLeftComponent(tableScrollPane);
 
@@ -95,7 +99,7 @@ class Main {
         });
         topPanel.add(searchButton);
 
-        searchMethod = new JComboBox(new String[] {"By Contains", "By Contains Case Sensitive"});
+        searchMethod = new JComboBox(new String[] {"By Contains", "By Contains Case Sensitive", "By Character"});
         searchMethod.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 searchMeth = (String) searchMethod.getSelectedItem();
@@ -124,6 +128,14 @@ class Main {
         dataButton = new JButton("Using Data Built-In");
         topPanel.add(dataButton);
 
+        helpButton = new JButton("?");
+        helpButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(f, "UniJ " + VERSION + "\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") + "\n\nVisit https://github.com/mochawoof/unij to get more help.", "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
+            }
+        });
+        topPanel.add(helpButton);
+
         sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         split.setRightComponent(sidePanel);
@@ -147,6 +159,7 @@ class Main {
         charLabel = new JTextArea();
         charLabel.setEditable(false);
         charLabel.setLineWrap(true);
+        charLabel.setMinimumSize(new Dimension(0, 0));
         charLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         sidePanel.add(charLabel);
 
@@ -202,6 +215,10 @@ class Main {
                     }
                 } else if (searchMeth.equals("By Contains Case Sensitive")) {
                     if (!ch.raw.contains(search)) {
+                        continue;
+                    }
+                } else if (searchMeth.equals("By Character")) {
+                    if (!search.contains(ch.toString())) {
                         continue;
                     }
                 }
