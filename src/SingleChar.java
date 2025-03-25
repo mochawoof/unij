@@ -6,6 +6,6 @@ class SingleChar {
         code = c;
     }
     public String toString() {
-        return "" + code;
+        return new String(Character.toChars(code));
     }
 }
