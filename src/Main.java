@@ -11,7 +11,7 @@ import java.util.stream.*;
 import java.awt.datatransfer.StringSelection;
 
 class Main {
-    public static final String VERSION = "2.0";
+    public static final String VERSION = "2.1";
     public static int charsPerRow = 16;
     public static ArrayList<SingleChar> chars = new ArrayList<SingleChar>();
 
@@ -131,7 +131,11 @@ class Main {
         helpButton = new JButton("?");
         helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(f, "UniJ " + VERSION + "\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") + "\n\nVisit https://github.com/mochawoof/unij to get more help.", "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
+                JOptionPane.showMessageDialog(f, "UniJ " + VERSION +
+                    "\nJava " + System.getProperty("java.version") + " " + System.getProperty("java.vendor") +
+                    "\n" + System.getProperty("os.name") +  " " + System.getProperty("os.version") + " " + System.getProperty("os.arch") +
+                    "\n\nVisit https://github.com/mochawoof/unij to get more help.",
+                "About UniJ", JOptionPane.PLAIN_MESSAGE, new ImageIcon(f.getIconImage()));
             }
         });
         topPanel.add(helpButton);
@@ -199,7 +203,6 @@ class Main {
             }
         };
         model.setColumnCount(charsPerRow);
-        model.setRowCount((int) Math.ceil((double) chars.size() / charsPerRow));
         table.setModel(model);
 
         int n = 0;
@@ -222,6 +225,10 @@ class Main {
                         continue;
                     }
                 }
+            }
+
+            if (n % charsPerRow == 0) {
+                model.setRowCount(model.getRowCount() + 1);
             }
 
             model.setValueAt(ch, row, col);
