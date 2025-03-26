@@ -4,5 +4,4 @@ main=Main
 include=*.java
 jarinclude=*.class icon64.png *.txt
 cp=lib/*;.
-jdk=
-C:\\Windows\\Temp\\chopper\\bluej\\jdk\\bin=
+jdk=C:\\Windows\\Temp\\chopper\\bluej\\jdk\\bin
