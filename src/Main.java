@@ -11,7 +11,7 @@ import java.util.stream.*;
 import java.awt.datatransfer.StringSelection;
 
 class Main {
-    public static final String VERSION = "2.1";
+    public static final String VERSION = "2.1.1";
     public static int charsPerRow = 16;
     public static ArrayList<SingleChar> chars = new ArrayList<SingleChar>();
 
