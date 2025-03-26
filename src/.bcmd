@@ -2,7 +2,7 @@
 #Tue Mar 25 12:03:36 EDT 2025
 main=Main
 include=*.java
-jarinclude=class,jar,png
+jarinclude=*.class icon64.png *.txt
 cp=lib/*;.
 jdk=
 C:\\Windows\\Temp\\chopper\\bluej\\jdk\\bin=
