@@ -11,7 +11,7 @@ import java.util.stream.*;
 import java.awt.datatransfer.StringSelection;
 
 class Main {
-    public static final String VERSION = "2.1.1";
+    public static final String VERSION = "2.1.2";
     public static int charsPerRow = 16;
     public static ArrayList<SingleChar> chars = new ArrayList<SingleChar>();
 
@@ -20,7 +20,7 @@ class Main {
     public static JScrollPane tableScrollPane;
     public static JTable table;
     public static DefaultTableModel model;
-    public static JPanel topPanel;
+    public static JToolBar topPanel;
     public static JTextField searchField;
     public static JButton searchButton;
     public static JComboBox searchMethod;
@@ -82,8 +82,7 @@ class Main {
         tableScrollPane.getVerticalScrollBar().setUnitIncrement(20);
         split.setLeftComponent(tableScrollPane);
 
-        topPanel = new JPanel();
-        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
+        topPanel = new JToolBar();
         f.add(topPanel, BorderLayout.PAGE_START);
 
         searchField = new JTextField();
